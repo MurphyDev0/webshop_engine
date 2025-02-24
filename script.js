@@ -1,59 +1,52 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const wheelInner = document.querySelector('.wheel-inner');
-    const spinBtn = document.getElementById('spin-btn');
-    const result = document.getElementById('result');
-
-    const prizes = [
-        { text: '10% OFF', color: '#FF6B6B' },
-        { text: '5% OFF', color: '#4ECDC4' },
-        { text: 'Ingyenes szállítás', color: '#45B7D1' },
-        { text: '15% OFF', color: '#96CEB4' },
-        { text: '20% OFF', color: '#FFEEAD' },
-        { text: 'Próbáld újra', color: '#D4A5A5' }
-    ];
-
-    // Create segments
-    prizes.forEach((prize, i) => {
-        const segment = document.createElement('div');
-        segment.className = 'segment';
-        segment.id = `segment-${i}`;
-        segment.style.backgroundColor = prize.color;
-        
-        const angle = (360 / prizes.length) * i;
-        segment.style.transform = `rotate(${angle}deg)`;
-
-        const text = document.createElement('span');
-        text.textContent = prize.text;
-        segment.appendChild(text);
-
-        wheelInner.appendChild(segment);
+function wheelOfFortune(selector) {
+    const node = document.querySelector(selector);
+    if (!node) return;
+    
+    const spin = node.querySelector('button');
+    const wheel = node.querySelector('ul');
+    let animation;
+    let previousEndDegree = 0;
+    
+    spin.addEventListener('click', () => {
+      if (animation) {
+        animation.cancel(); // Reset the animation if it already exists
+      }
+      
+      const randomAdditionalDegrees = Math.random() * 360 + 1800;
+      const newEndDegree = previousEndDegree + randomAdditionalDegrees;
+      
+      animation = wheel.animate([
+        { transform: `rotate(${previousEndDegree}deg)` },
+        { transform: `rotate(${newEndDegree}deg)` }
+      ], {
+        duration: 4000,
+        direction: 'normal',
+        easing: 'cubic-bezier(0.440, -0.205, 0.000, 1.130)',
+        fill: 'forwards',
+        iterations: 1
+      });
+      
+      previousEndDegree = newEndDegree;
     });
-
-    let spinning = false;
-    let currentRotation = 0;
-
-    spinBtn.addEventListener('click', () => {
-        if (spinning) return;
-        
-        spinning = true;
-        spinBtn.disabled = true;
-        result.textContent = '';
-
-        const spins = 5 + Math.floor(Math.random() * 5);
-        const extra = Math.floor(Math.random() * 360);
-        const totalRotation = spins * 360 + extra;
-        currentRotation += totalRotation;
-
-        wheelInner.style.transform = `rotate(${currentRotation}deg)`;
-
-        setTimeout(() => {
-            spinning = false;
-            spinBtn.disabled = false;
-
-            const winningIndex = Math.floor(
-                (360 - (currentRotation % 360)) / (360 / prizes.length)
-            );
-            result.textContent = `Nyereményed: ${prizes[winningIndex].text}!`;
-        }, 4000);
+  }
+  
+  // Show modal when page loads
+  window.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('fortuneModal');
+    modal.style.display = 'block';
+    
+    // Initialize wheel of fortune
+    wheelOfFortune('.ui-wheel-of-fortune');
+    
+    // Close modal functionality
+    document.getElementById('closeModal').addEventListener('click', () => {
+      modal.style.display = 'none';
     });
-});
+    
+    // Also close when clicking outside the modal content
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    });
+  });

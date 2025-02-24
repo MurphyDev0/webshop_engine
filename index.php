@@ -65,13 +65,24 @@
         </div>
     </nav>
 
-    <!-- Wheel of Fortune Modal -->
-    <div class="wheel-container">
-        <div class="wheel">
-            <div class="wheel-inner"></div>
+    <!-- Fortune Wheel Popup -->
+    <div id="fortuneModal" class="modal">
+        <div class="modal-content">
+        <h1>Pörgess és nyerj!</h1>
+        <span class="close-button" id="closeModal">&times;</span>
+        <br>
+        <fieldset class="ui-wheel-of-fortune">
+            <ul>
+            <li>-15%</li>
+            <li>-10%</li>
+            <li>-30%</li>
+            <li>Ajándék termék</li>
+            <li>Pörgess újra</li>
+            <li>Ingyenes szállítás</li>
+            </ul>
+            <button type="button">SPIN</button>
+        </fieldset>
         </div>
-        <button id="spin-btn">Pörgetés</button>
-        <div id="result"></div>
     </div>
 
     <!-- Main Content -->
