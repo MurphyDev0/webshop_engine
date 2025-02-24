@@ -24,9 +24,8 @@ class Auth {
         
         if ($user = $result->fetch_assoc()) {
             if (password_verify($password, $user['password'])) {
-                session_start();
-                $_SESSION['user_id'] = $user['id'];
-                return true;
+                // Session indítását és változók beállítását a login_process.php-ra bízzuk
+                return $user['id']; // Visszaadjuk a user ID-t
             }
         }
         

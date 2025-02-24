@@ -1,8 +1,9 @@
 <?php
+    session_start(); // Biztosítjuk, hogy a session el van indítva
     include 'config.php';
 
+    $is_logged = isset($_SESSION['is_logged']) ? $_SESSION['is_logged'] : false;
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,10 +31,14 @@
                     <img src="logo.png" alt="Logo" class="h-8 w-auto">
                 </div>
                 
-                <!-- Right Side Menu -->
-                <div class="hidden md:flex items-center space-x-4">
-                    <a href="login.php" class="py-2 px-2 font-medium text-gray-500 rounded hover:bg-blue-500 hover:text-white transition duration-300">Bejelentkezés</a>
-                    <a href="register.php" class="py-2 px-2 font-medium text-white bg-blue-500 rounded hover:bg-blue-400 transition duration-300">Regisztráció</a>
+                 <!-- Right Side Menu -->
+                 <div class="hidden md:flex items-center space-x-4">
+                    <?php if (!$is_logged): ?>
+                        <a href="login.php" class="py-2 px-2 font-medium text-gray-500 rounded hover:bg-blue-500 hover:text-white transition duration-300">Bejelentkezés</a>
+                        <a href="register.php" class="py-2 px-2 font-medium text-white bg-blue-500 rounded hover:bg-blue-400 transition duration-300">Regisztráció</a>
+                    <?php else: ?>
+                        <a href="logout.php" class="py-2 px-2 font-medium text-gray-500 rounded hover:bg-blue-500 hover:text-white transition duration-300">Kijelentkezés</a>
+                    <?php endif; ?>
                     <div class="relative">
                         <span class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">0</span>
                         <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,20 +73,40 @@
     <!-- Fortune Wheel Popup -->
     <div id="fortuneModal" class="modal">
         <div class="modal-content">
-        <h1>Pörgess és nyerj!</h1>
-        <span class="close-button" id="closeModal">&times;</span>
-        <br>
-        <fieldset class="ui-wheel-of-fortune">
-            <ul>
-            <li>-15%</li>
-            <li>-10%</li>
-            <li>-30%</li>
-            <li>Ajándék termék</li>
-            <li>Pörgess újra</li>
-            <li>Ingyenes szállítás</li>
-            </ul>
-            <button type="button">SPIN</button>
-        </fieldset>
+            <h1 class="text-2xl font-bold text-center">Pörgess és nyerj!</h1>
+            <span class="close-button" id="closeModal">&times;</span>
+            <br>
+            
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <!-- Wheel of Fortune -->
+                <fieldset class="ui-wheel-of-fortune md:w-1/2">
+                    <ul>
+                        <li>-15%</li>
+                        <li>-10%</li>
+                        <li>-30%</li>
+                        <li>Ajándék termék</li>
+                        <li>Pörgess újra</li>
+                        <li>Ingyenes szállítás</li>
+                    </ul>
+                    <button type="button" id="spinButton" <?php echo (!$is_logged) ? 'disabled' : ''; ?>>SPIN</button>
+                </fieldset>
+                
+                <!-- Text next to the wheel -->
+                <div class="md:w-1/2 mt-6 md:mt-0 md:ml-6">
+                    <?php if (!$is_logged): ?>
+                    <!-- Login Required Message -->
+                    <div class="login-message p-4 border rounded bg-gray-100">
+                        <p class="text-lg font-medium mb-2">A pörgetéshez előbb jelentkezzen be!</p>
+                        <a href="login.php" class="login-button bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-400 inline-block">Bejelentkezés</a>
+                    </div>
+                    <?php else: ?>
+                    <p class="text-lg font-medium mb-2">Kuponkód:</p>
+                    <div class="p-4 border rounded bg-gray-100">
+                       <p id="couponCode"></p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
     </div>
 
