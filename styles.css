@@ -64,12 +64,12 @@
     width: 50cqi;
 }
 
-.ui-wheel-of-fortune li:nth-of-type(1) { --_idx: 1; }
-.ui-wheel-of-fortune li:nth-of-type(2) { --_idx: 2; }
-.ui-wheel-of-fortune li:nth-of-type(3) { --_idx: 3; }
-.ui-wheel-of-fortune li:nth-of-type(4) { --_idx: 4; }
-.ui-wheel-of-fortune li:nth-of-type(5) { --_idx: 5; }
-.ui-wheel-of-fortune li:nth-of-type(6) { --_idx: 6; }
+.ui-wheel-of-fortune li:nth-of-type(1) { --_idx: 0; }
+.ui-wheel-of-fortune li:nth-of-type(2) { --_idx: 1; }
+.ui-wheel-of-fortune li:nth-of-type(3) { --_idx: 2; }
+.ui-wheel-of-fortune li:nth-of-type(4) { --_idx: 3; }
+.ui-wheel-of-fortune li:nth-of-type(5) { --_idx: 4; }
+.ui-wheel-of-fortune li:nth-of-type(6) { --_idx: 5; }
 
 /* Modal styles */
 .modal {
