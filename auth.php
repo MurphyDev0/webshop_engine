@@ -7,11 +7,11 @@ class Auth {
         $this->conn = $conn;
     }
     
-    public function register($username, $password, $email) {
+    public function register($username, $fullname, $password, $email) {
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
         
-        $stmt = $this->conn->prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $username, $hashed_password, $email);
+        $stmt = $this->conn->prepare("INSERT INTO users (username, password, name, email) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $username, $fullname, $hashed_password, $email);
         
         return $stmt->execute();
     }

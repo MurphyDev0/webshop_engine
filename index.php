@@ -32,19 +32,28 @@
                 </div>
                 
                  <!-- Right Side Menu -->
-                 <div class="hidden md:flex items-center space-x-4">
+                <div class="hidden md:flex items-center space-x-4">
                     <?php if (!$is_logged): ?>
                         <a href="login.php" class="py-2 px-2 font-medium text-gray-500 rounded hover:bg-blue-500 hover:text-white transition duration-300">Bejelentkezés</a>
                         <a href="register.php" class="py-2 px-2 font-medium text-white bg-blue-500 rounded hover:bg-blue-400 transition duration-300">Regisztráció</a>
                     <?php else: ?>
-                        <a href="logout.php" class="py-2 px-2 font-medium text-gray-500 rounded hover:bg-blue-500 hover:text-white transition duration-300">Kijelentkezés</a>
+                        <a href="profile.php" class="text-gray-500 hover:text-blue-500 transition duration-300">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </a>
+                        <a href="logout.php" class="text-gray-500 hover:text-blue-500 transition duration-300">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                            </svg>
+                        </a>
                     <?php endif; ?>
-                    <div class="relative">
+                    <a href="cart.php" class="relative">
                         <span class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center">0</span>
-                        <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6 text-gray-500 hover:text-blue-500 transition duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
-                    </div>
+                    </a>
                 </div>
                 
                 <!-- Mobile menu button -->
@@ -88,7 +97,7 @@
                         <li>Pörgess újra</li>
                         <li>Ingyenes szállítás</li>
                     </ul>
-                    <button type="button" id="spinButton" <?php echo (!$is_logged) ? 'disabled' : ''; ?>>SPIN</button>
+                    <button type="button" id="spinButton" <?php echo (!$is_logged) ? 'disabled' : 'data-logged-in="true"'; ?>>SPIN</button>
                 </fieldset>
                 
                 <!-- Text next to the wheel -->
@@ -100,7 +109,7 @@
                         <a href="login.php" class="login-button bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-400 inline-block">Bejelentkezés</a>
                     </div>
                     <?php else: ?>
-                    <p class="text-lg font-medium mb-2">Kuponkód:</p>
+                    <p class="text-lg font-medium mb-2" id="couponCodeText">Kuponkód:</p>
                     <div class="p-4 border rounded bg-gray-100">
                        <p id="couponCode"></p>
                     </div>
