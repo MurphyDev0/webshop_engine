@@ -259,201 +259,83 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-$(document).ready(function() {
-    // Értesítés megjelenítése
+document.addEventListener('DOMContentLoaded', function() {
+    // Notification megjelenítése
     function showNotification(message, isSuccess) {
-        const notification = $('#notification');
-        notification.removeClass('hidden bg-green-100 bg-red-100 text-green-700 text-red-700');
+        var notification = document.getElementById('notification');
+        notification.classList.remove('hidden', 'bg-green-100', 'bg-red-100', 'text-green-800', 'text-red-800');
+        notification.classList.add(isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800');
+        notification.innerHTML = '<p>' + message + '</p>';
+        notification.style.display = 'block';
         
-        if (isSuccess) {
-            notification.addClass('bg-green-100 text-green-700');
-        } else {
-            notification.addClass('bg-red-100 text-red-700');
-        }
-        
-        notification.html(`
-            <div class="p-4 rounded flex items-center">
-                <div class="ml-3">
-                    ${message}
-                </div>
-            </div>
-        `);
-        
-        // Értesítés eltüntetése 5 másodperc után
+        // 5 másodperc után elrejtjük
         setTimeout(function() {
-            notification.addClass('hidden');
+            notification.classList.add('hidden');
         }, 5000);
     }
     
-    // Custom Alert megjelenítése
-    function showCustomAlert(message, isSuccess = true) {
-        // Ha már létezik alert modal, eltávolítjuk
-        $('#customAlertModal').remove();
+    // A form küldés kezelő funkció létrehozása
+    function handleFormSubmission(formId) {
+        var form = document.getElementById(formId);
+        if (!form) return;
         
-        // Modal HTML létrehozása
-        const modalHtml = `
-        <div id="customAlertModal" class="fixed inset-0 flex items-center justify-center z-50">
-            <div class="fixed inset-0 bg-black opacity-50"></div>
-            <div class="bg-white rounded-lg p-6 max-w-sm mx-auto relative z-10 shadow-xl">
-                <div class="flex items-center ${isSuccess ? 'text-green-600' : 'text-red-600'} mb-4">
-                    <span class="text-2xl mr-2">
-                        ${isSuccess ? '✓' : '✗'}
-                    </span>
-                    <h3 class="text-lg font-semibold">${isSuccess ? 'Sikeres művelet' : 'Hiba történt'}</h3>
-                </div>
-                <div class="mb-5">
-                    <p>${message}</p>
-                </div>
-                <div class="flex justify-end">
-                    <button id="closeCustomAlert" class="bg-gray-200 text-gray-800 py-2 px-4 rounded hover:bg-gray-300 transition duration-200">
-                        Bezárás
-                    </button>
-                </div>
-            </div>
-        </div>
-        `;
-        
-        // Modal hozzáadása a body-hoz
-        $('body').append(modalHtml);
-        
-        // Bezárás gombra kattintás kezelése
-        $('#closeCustomAlert').on('click', function() {
-            $('#customAlertModal').remove();
-        });
-        
-        // ESC billentyű lenyomására is bezárjuk
-        $(document).on('keydown', function(e) {
-            if (e.key === 'Escape' && $('#customAlertModal').length) {
-                $('#customAlertModal').remove();
-            }
-        });
-        
-        // Kattintás a háttérre is bezárja
-        $('#customAlertModal').on('click', function(e) {
-            if (e.target === this) {
-                $('#customAlertModal').remove();
-            }
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Űrlap adatok összegyűjtése
+            var formData = new FormData(form);
+            
+            // Fetch API használata AJAX helyett
+            fetch('profile_update.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                console.log('Response:', data); // Debug információ
+                showNotification(data.message, data.success);
+            })
+            .catch(function(error) {
+                console.error('Fetch error:', error);
+                showNotification('Hiba történt a kérés feldolgozása során.', false);
+            });
         });
     }
     
-    // Személyes adatok form kezelése
-    $('#personalForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        // FormData használata
-        const formData = new FormData(this);
-        
-        $.ajax({
-            type: 'POST',
-            url: 'profile.php',
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            success: function(response) {
-                // Custom Alert megjelenítése a JSON új oldalon való megnyitása helyett
-                if(response.success) {
-                    showCustomAlert("Személyes adatok sikeresen mentve!", true);
-                } else {
-                    showCustomAlert("Hiba történt a mentés során: " + response.message, false);
-                }
-                
-                showNotification(response.message, response.success);
-                
-                // Ha sikeres volt a frissítés, frissítsük a felhasználónév és email megjelenítését a sidebar-ban
-                if (response.success) {
-                    const name = $('#name').val();
-                    const email = $('#email').val();
-                    $('h2.font-bold.text-xl').text(name);
-                    $('p.text-gray-500.text-sm').text(email);
-                }
-            },
-            error: function(xhr, status, error) {
-                showCustomAlert("Hiba történt a kérés feldolgozása során.", false);
-                console.error("AJAX hiba:", status, error);
-                showNotification('Hiba történt a kérés feldolgozása során.', false);
-            }
+    // Az űrlapok feldolgozása
+    handleFormSubmission('personalForm');
+    handleFormSubmission('addressForm');
+    handleFormSubmission('passwordForm');
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Kupon kód másolása a vágólapra funkció
+    var kuponKodok = document.querySelectorAll('.bg-gray-100.px-3.py-1');
+    kuponKodok.forEach(function(kodElem) {
+        kodElem.addEventListener('click', function() {
+            var tempInput = document.createElement('input');
+            tempInput.value = this.textContent;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            
+            // Értesítés megjelenítése
+            var notification = document.getElementById('notification');
+            notification.classList.remove('hidden', 'bg-green-100', 'bg-red-100');
+            notification.classList.add('bg-green-100', 'text-green-800');
+            notification.innerHTML = '<p>Kuponkód másolva a vágólapra!</p>';
+            
+            // 3 másodperc után elrejtjük
+            setTimeout(function() {
+                notification.classList.add('hidden');
+            }, 3000);
         });
-    });
-    
-    // Szállítási cím form kezelése
-    $('#addressForm').on('submit', function(e) {
-        e.preventDefault();
         
-        // FormData használata
-        const formData = new FormData(this);
-        
-        $.ajax({
-            type: 'POST',
-            url: 'profile.php',
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            success: function(response) {
-                // Custom Alert megjelenítése
-                if(response.success) {
-                    showCustomAlert("Szállítási cím sikeresen mentve!", true);
-                } else {
-                    showCustomAlert("Hiba történt a cím mentése során: " + response.message, false);
-                }
-                
-                showNotification(response.message, response.success);
-            },
-            error: function(xhr, status, error) {
-                showCustomAlert("Hiba történt a kérés feldolgozása során.", false);
-                console.error("AJAX hiba:", status, error);
-                showNotification('Hiba történt a kérés feldolgozása során.', false);
-            }
-        });
-    });
-    
-    // Jelszó módosítás form kezelése
-    $('#passwordForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        // Ellenőrizzük, hogy az új jelszó és a megerősítés megegyezik-e
-        const newPassword = $('#new-password').val();
-        const confirmPassword = $('#confirm-password').val();
-        
-        if (newPassword !== confirmPassword) {
-            showCustomAlert("Az új jelszó és a megerősítés nem egyezik!", false);
-            showNotification('Az új jelszó és a megerősítés nem egyezik!', false);
-            return;
-        }
-        
-        // FormData használata
-        const formData = new FormData(this);
-        
-        $.ajax({
-            type: 'POST',
-            url: 'profile.php',
-            data: formData,
-            processData: false,
-            contentType: false,
-            dataType: 'json',
-            success: function(response) {
-                // Custom Alert megjelenítése
-                if(response.success) {
-                    showCustomAlert("Jelszó sikeresen módosítva!", true);
-                } else {
-                    showCustomAlert("Hiba történt a jelszó módosítása során: " + response.message, false);
-                }
-                
-                showNotification(response.message, response.success);
-                
-                // Sikeres jelszómódosítás esetén ürítsük a mezőket
-                if (response.success) {
-                    $('#current-password').val('');
-                    $('#new-password').val('');
-                    $('#confirm-password').val('');
-                }
-            },
-            error: function(xhr, status, error) {
-                showCustomAlert("Hiba történt a kérés feldolgozása során.", false);
-                console.error("AJAX hiba:", status, error);
-                showNotification('Hiba történt a kérés feldolgozása során.', false);
-            }
-        });
+        // Kurzor mutatása, hogy jelezze hogy kattintható
+        kodElem.style.cursor = 'pointer';
+        kodElem.title = 'Kattints a másoláshoz';
     });
 });

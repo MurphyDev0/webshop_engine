@@ -13,7 +13,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 <?php echo $userSettings['dark_mode'] == 1 ? 'dark-mode' : ''; ?>">
     <!-- Navigation -->
     <nav class="bg-white shadow-lg">
         <div class="max-w-6xl mx-auto px-4">

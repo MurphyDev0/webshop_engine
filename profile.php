@@ -11,6 +11,10 @@ if (!isset($_SESSION['user_id'])) {
 // Adatbázis kapcsolat betöltése
 require_once 'config.php';
 
+// Üzenetek kezelése
+$notification = '';
+$notificationType = '';
+
 // Felhasználói adatok lekérése az adatbázisból
 $userId = $_SESSION['user_id'];
 $sql = "SELECT * FROM users WHERE id = ?";
@@ -26,60 +30,52 @@ if ($result->num_rows > 0) {
     exit();
 }
 
-// AJAX kérések feldolgozása adatfrissítéshez
+// Form beküldés feldolgozása (hagyományos módszer)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
-    $response = ['success' => false, 'message' => ''];
-    
     // Személyes adatok frissítése
     if (isset($_POST['action']) && $_POST['action'] === 'update_personal') {
         $fullName = $_POST['name'] ?? '';
         $email = $_POST['email'] ?? '';
         $phone = $_POST['phone'] ?? '';
         
-        print_r($_POST);
-
         // Validálás - példa
         if (empty($fullName) || empty($email)) {
-            $response['message'] = 'A név és az email kötelező mezők!';
-            echo json_encode($response);
-            exit();
-        }
-        
-        // Email formátum ellenőrzése
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $response['message'] = 'Érvénytelen email formátum!';
-            echo json_encode($response);
-            exit();
-        }
-        
-        // Megnézzük, hogy az email cím már használatban van-e más felhasználónál
-        $emailCheckSql = "SELECT id FROM users WHERE email = ? AND id != ?";
-        $emailCheckStmt = $conn->prepare($emailCheckSql);
-        $emailCheckStmt->bind_param("si", $email, $userId);
-        $emailCheckStmt->execute();
-        $emailCheckResult = $emailCheckStmt->get_result();
-        
-        if ($emailCheckResult->num_rows > 0) {
-            $response['message'] = 'Ez az email cím már használatban van!';
-            echo json_encode($response);
-            exit();
-        }
-        
-        // Frissítés az adatbázisban - a name mezőt használjuk a full_name helyett, az adatbázis struktúrának megfelelően
-        $updateSql = "UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?";
-        $updateStmt = $conn->prepare($updateSql);
-        $updateStmt->bind_param("sssi", $fullName, $email, $phone, $userId);
-        
-        if ($updateStmt->execute()) {
-            $response['success'] = true;
-            $response['message'] = 'Személyes adatok sikeresen frissítve!';
+            $notification = 'A név és az email kötelező mezők!';
+            $notificationType = 'error';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $notification = 'Érvénytelen email formátum!';
+            $notificationType = 'error';
         } else {
-            $response['message'] = 'Hiba történt a frissítés során: ' . $conn->error;
+            // Megnézzük, hogy az email cím már használatban van-e más felhasználónál
+            $emailCheckSql = "SELECT id FROM users WHERE email = ? AND id != ?";
+            $emailCheckStmt = $conn->prepare($emailCheckSql);
+            $emailCheckStmt->bind_param("si", $email, $userId);
+            $emailCheckStmt->execute();
+            $emailCheckResult = $emailCheckStmt->get_result();
+            
+            if ($emailCheckResult->num_rows > 0) {
+                $notification = 'Ez az email cím már használatban van!';
+                $notificationType = 'error';
+            } else {
+                // Frissítés az adatbázisban
+                $updateSql = "UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?";
+                $updateStmt = $conn->prepare($updateSql);
+                $updateStmt->bind_param("sssi", $fullName, $email, $phone, $userId);
+                
+                if ($updateStmt->execute()) {
+                    $notification = 'Személyes adatok sikeresen frissítve!';
+                    $notificationType = 'success';
+                    
+                    // Adatok újratöltése, hogy a megjelenítés frissüljön
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    $user = $result->fetch_assoc();
+                } else {
+                    $notification = 'Hiba történt a frissítés során: ' . $conn->error;
+                    $notificationType = 'error';
+                }
+            }
         }
-        
-        echo json_encode($response);
-        exit();
     }
     
     // Szállítási cím frissítése
@@ -90,25 +86,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Validálás - példa
         if (empty($city) || empty($zip)) {
-            $response['message'] = 'A város és az irányítószám kötelező mezők!';
-            echo json_encode($response);
-            exit();
-        }
-        
-        // Frissítés az adatbázisban - a megfelelő mezőnevekkel, az adatbázis struktúrának megfelelően
-        $updateSql = "UPDATE users SET address = ?, town = ?, postalCode = ? WHERE id = ?";
-        $updateStmt = $conn->prepare($updateSql);
-        $updateStmt->bind_param("sssi", $address, $city, $zip, $userId);
-        
-        if ($updateStmt->execute()) {
-            $response['success'] = true;
-            $response['message'] = 'Szállítási cím sikeresen frissítve!';
+            $notification = 'A város és az irányítószám kötelező mezők!';
+            $notificationType = 'error';
         } else {
-            $response['message'] = 'Hiba történt a frissítés során: ' . $conn->error;
+            // Frissítés az adatbázisban
+            $updateSql = "UPDATE users SET address = ?, town = ?, postalCode = ? WHERE id = ?";
+            $updateStmt = $conn->prepare($updateSql);
+            $updateStmt->bind_param("sssi", $address, $city, $zip, $userId);
+            
+            if ($updateStmt->execute()) {
+                $notification = 'Szállítási cím sikeresen frissítve!';
+                $notificationType = 'success';
+                
+                // Adatok újratöltése, hogy a megjelenítés frissüljön
+                $stmt->execute();
+                $result = $stmt->get_result();
+                $user = $result->fetch_assoc();
+            } else {
+                $notification = 'Hiba történt a frissítés során: ' . $conn->error;
+                $notificationType = 'error';
+            }
         }
-        
-        echo json_encode($response);
-        exit();
     }
     
     // Jelszó módosítása
@@ -119,58 +117,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Validálás
         if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
-            $response['message'] = 'Minden jelszó mező kitöltése kötelező!';
-            echo json_encode($response);
-            exit();
-        }
-        
-        // Jelszó minimum hosszának ellenőrzése
-        if (strlen($newPassword) < 8) {
-            $response['message'] = 'Az új jelszónak legalább 8 karakter hosszúnak kell lennie!';
-            echo json_encode($response);
-            exit();
-        }
-        
-        // Jelenlegi jelszó ellenőrzése
-        $passwordSql = "SELECT password FROM users WHERE id = ?";
-        $passwordStmt = $conn->prepare($passwordSql);
-        $passwordStmt->bind_param("i", $userId);
-        $passwordStmt->execute();
-        $passwordResult = $passwordStmt->get_result();
-        $userData = $passwordResult->fetch_assoc();
-        
-        if (!password_verify($currentPassword, $userData['password'])) {
-            $response['message'] = 'A jelenlegi jelszó nem megfelelő!';
-            echo json_encode($response);
-            exit();
-        }
-        
-        // Új jelszó és megerősítés egyezésének ellenőrzése
-        if ($newPassword !== $confirmPassword) {
-            $response['message'] = 'Az új jelszó és a megerősítés nem egyezik!';
-            echo json_encode($response);
-            exit();
-        }
-        
-        // Jelszó frissítése
-        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        $updatePasswordSql = "UPDATE users SET password = ? WHERE id = ?";
-        $updatePasswordStmt = $conn->prepare($updatePasswordSql);
-        $updatePasswordStmt->bind_param("si", $hashedPassword, $userId);
-        
-        if ($updatePasswordStmt->execute()) {
-            $response['success'] = true;
-            $response['message'] = 'Jelszó sikeresen módosítva!';
+            $notification = 'Minden jelszó mező kitöltése kötelező!';
+            $notificationType = 'error';
+        } elseif (strlen($newPassword) < 8) {
+            $notification = 'Az új jelszónak legalább 8 karakter hosszúnak kell lennie!';
+            $notificationType = 'error';
         } else {
-            $response['message'] = 'Hiba történt a jelszó módosítása során: ' . $conn->error;
+            // Jelenlegi jelszó ellenőrzése
+            $passwordSql = "SELECT password FROM users WHERE id = ?";
+            $passwordStmt = $conn->prepare($passwordSql);
+            $passwordStmt->bind_param("i", $userId);
+            $passwordStmt->execute();
+            $passwordResult = $passwordStmt->get_result();
+            $userData = $passwordResult->fetch_assoc();
+            
+            if (!password_verify($currentPassword, $userData['password'])) {
+                $notification = 'A jelenlegi jelszó nem megfelelő!';
+                $notificationType = 'error';
+            } elseif ($newPassword !== $confirmPassword) {
+                $notification = 'Az új jelszó és a megerősítés nem egyezik!';
+                $notificationType = 'error';
+            } else {
+                // Jelszó frissítése
+                $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                $updatePasswordSql = "UPDATE users SET password = ? WHERE id = ?";
+                $updatePasswordStmt = $conn->prepare($updatePasswordSql);
+                $updatePasswordStmt->bind_param("si", $hashedPassword, $userId);
+                
+                if ($updatePasswordStmt->execute()) {
+                    $notification = 'Jelszó sikeresen módosítva!';
+                    $notificationType = 'success';
+                } else {
+                    $notification = 'Hiba történt a jelszó módosítása során: ' . $conn->error;
+                    $notificationType = 'error';
+                }
+            }
         }
-        
-        echo json_encode($response);
-        exit();
     }
 }
 
-// Monogram generálása
+$darkMode = isset($_COOKIE['dark_mode']) && $_COOKIE['dark_mode'] === '1';
+
+// Ha van bejelentkezett felhasználó és vannak beállításai, akkor onnan is lekérhetjük
+if (isset($_SESSION['user_id']) && isset($userSettings['dark_mode'])) {
+    $darkMode = $userSettings['dark_mode'] == 1;
+}
+
 $monogram = generateMonogram($user['name']);
 ?>
 
@@ -181,9 +173,11 @@ $monogram = generateMonogram($user['name']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Felhasználói Profil</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="darkmode.css">
+    <script src="darkmode.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 min-h-screen <?php echo $darkMode ? 'dark-mode' : ''; ?>">
     <div class="container mx-auto px-4 py-8">
         <div class="flex flex-col md:flex-row gap-6">
             <!-- Sidebar Menu -->
@@ -201,7 +195,7 @@ $monogram = generateMonogram($user['name']);
                 <nav>
                     <ul class="space-y-2">
                         <li>
-                            <a href="#" class="flex items-center p-3 text-blue-600 bg-blue-50 rounded-lg font-medium">
+                            <a href="profile.php" class="flex items-center p-3 text-blue-600 bg-blue-50 rounded-lg font-medium">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
@@ -209,7 +203,7 @@ $monogram = generateMonogram($user['name']);
                             </a>
                         </li>
                         <li>
-                            <a href="#" class="flex items-center p-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium">
+                            <a href="orders.php" class="flex items-center p-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
@@ -217,7 +211,7 @@ $monogram = generateMonogram($user['name']);
                             </a>
                         </li>
                         <li>
-                            <a href="#" class="flex items-center p-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium">
+                            <a href="mycoupons.php" class="flex items-center p-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                                 </svg>
@@ -233,7 +227,7 @@ $monogram = generateMonogram($user['name']);
                             </a>
                         </li>
                         <li>
-                            <a href="#" class="flex items-center p-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium">
+                            <a href="settings.php" class="flex items-center p-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -242,7 +236,7 @@ $monogram = generateMonogram($user['name']);
                             </a>
                         </li>
                         <li>
-                            <a href="logout.php" class="flex items-center p-3 text-red-600 hover:bg-red-50 rounded-lg font-medium">
+                            <a href="index.php" class="flex items-center p-3 text-red-600 hover:bg-red-50 rounded-lg font-medium">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
@@ -257,7 +251,11 @@ $monogram = generateMonogram($user['name']);
             <div class="flex-1 bg-white rounded-lg shadow-md p-6">
                 <h1 class="text-2xl font-bold mb-6">Profilom</h1>
                 
-                <div id="notification" class="mb-6 hidden"></div>
+                <?php if (!empty($notification)): ?>
+                    <div id="notification" class="mb-6 p-4 <?php echo $notificationType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?> rounded">
+                        <p><?php echo htmlspecialchars($notification); ?></p>
+                    </div>
+                <?php endif; ?>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -305,7 +303,7 @@ $monogram = generateMonogram($user['name']);
                     
                     <div>
                         <h2 class="text-lg font-semibold mb-4">Szállítási cím</h2>
-                        <form id="addressForm">
+                        <form id="addressForm" method="POST">
                             <input type="hidden" name="action" value="update_address">
                             <div class="mb-4">
                                 <label class="block text-gray-700 text-sm font-bold mb-2" for="address">
@@ -349,7 +347,7 @@ $monogram = generateMonogram($user['name']);
                 
                 <div class="mt-8">
                     <h2 class="text-lg font-semibold mb-4">Jelszó módosítása</h2>
-                    <form id="passwordForm" class="max-w-md">
+                    <form id="passwordForm" class="max-w-md" method="POST">
                         <input type="hidden" name="action" value="update_password">
                         <div class="mb-4">
                             <label class="block text-gray-700 text-sm font-bold mb-2" for="current-password">
@@ -392,7 +390,5 @@ $monogram = generateMonogram($user['name']);
             </div>
         </div>
     </div>
-
-    <script src="script.js"></script>
 </body>
 </html>
