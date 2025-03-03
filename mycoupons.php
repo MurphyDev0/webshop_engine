@@ -48,6 +48,9 @@ $monogram = generateMonogram($user['name']);
     <title>Kuponjaim</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="darkmode.css">
+    <script src="darkmode.js"></script>
 </head>
 <body class="bg-gray-100 <?php echo $userSettings['dark_mode'] == 1 ? 'dark-mode' : ''; ?>">
     <div class="container mx-auto px-4 py-8">

@@ -228,9 +228,9 @@ if (isset($_SESSION['user_id']) && isset($userSettings['dark_mode'])) {
                         <h2 class="text-xl font-semibold mb-3 pb-2 border-b">Felhasználói felület</h2>
                         
                         <div class="flex items-center justify-between mb-4">
-                            <label for="dark_mode" class="cursor-pointer">Sötét mód</label>
+                            <label for="notifications" class="cursor-pointer">Sötét mód</label>
                             <label class="dark-mode-toggle">
-                                <input type="checkbox" id="dark_mode" name="dark_mode" <?php echo $userSettings['dark_mode'] == 1 ? 'checked' : ''; ?>>
+                                <input id="dark-mode-toggle" type="checkbox" id="dark_mode" name="dark_mode" <?php echo $userSettings['dark_mode'] == 1 ? 'checked' : ''; ?>>
                                 <span class="slider"></span>
                             </label>
                         </div>
